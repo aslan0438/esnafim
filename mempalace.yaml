@@ -1,0 +1,30 @@
+wing: esnafim
+rooms:
+- name: supabase
+  description: Files from supabase/
+  keywords:
+  - supabase
+  - supabase
+- name: src
+  description: Files from src/
+  keywords:
+  - src
+  - src
+- name: public
+  description: Files from public/
+  keywords:
+  - public
+  - public
+- name: frontend
+  description: Files from components/
+  keywords:
+  - frontend
+  - components
+- name: backend
+  description: Files from api/
+  keywords:
+  - backend
+  - api
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []
