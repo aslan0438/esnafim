@@ -8,7 +8,6 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import { useSearchParams } from 'react-router-dom'
-import { createPortal } from 'react-dom' // Portal için eklendi
 
 export default function Customers() {
   const businessId = useAuthStore((s) => s.businessId)
@@ -53,7 +52,6 @@ export default function Customers() {
         .select('*', { count: 'exact', head: true })
         .eq('customer_id', selectedCustomer.id)
         .eq('business_id', businessId)
-
       if (apptCountError) throw apptCountError
 
       const { data: orders, error: orderError } = await supabase
@@ -61,7 +59,6 @@ export default function Customers() {
         .select('total_amount')
         .eq('customer_id', selectedCustomer.id)
         .eq('business_id', businessId)
-
       if (orderError) throw orderError
 
       const { data: lastAppointment, error: lastVisitError } = await supabase
@@ -72,7 +69,6 @@ export default function Customers() {
         .order('appointment_date', { ascending: false })
         .limit(1)
         .maybeSingle()
-
       if (lastVisitError) throw lastVisitError
 
       const totalSpending = orders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0
@@ -87,13 +83,8 @@ export default function Customers() {
 
   const createMutation = useMutation({
     mutationFn: async (values) => {
-      if (!businessId) {
-        throw new Error('businessId bulunamadı. Lütfen tekrar giriş yapın.')
-      }
-      const { error } = await supabase.from('customers').insert({
-        ...values,
-        business_id: businessId,
-      })
+      if (!businessId) throw new Error('businessId bulunamadı. Lütfen tekrar giriş yapın.')
+      const { error } = await supabase.from('customers').insert({ ...values, business_id: businessId })
       if (error) throw error
     },
     onSuccess: () => {
@@ -102,18 +93,12 @@ export default function Customers() {
       setOpen(false)
       resetForm()
     },
-    onError: (err) => {
-      toast.error(err.message || 'Müşteri eklenemedi')
-    },
+    onError: (err) => toast.error(err.message || 'Müşteri eklenemedi'),
   })
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, values }) => {
-      const { error } = await supabase
-        .from('customers')
-        .update(values)
-        .eq('id', id)
-        .eq('business_id', businessId)
+      const { error } = await supabase.from('customers').update(values).eq('id', id).eq('business_id', businessId)
       if (error) throw error
     },
     onSuccess: () => {
@@ -123,9 +108,7 @@ export default function Customers() {
       setProfileOpen(false)
       resetForm()
     },
-    onError: (err) => {
-      toast.error(err.message || 'Müşteri güncellenemedi')
-    },
+    onError: (err) => toast.error(err.message || 'Müşteri güncellenemedi'),
   })
 
   const deleteMutation = useMutation({
@@ -137,9 +120,7 @@ export default function Customers() {
       queryClient.invalidateQueries({ queryKey: ['customers', businessId] })
       toast.success('Müşteri silindi')
     },
-    onError: (err) => {
-      toast.error(err.message || 'Müşteri silinemedi')
-    },
+    onError: (err) => toast.error(err.message || 'Müşteri silinemedi'),
   })
 
   const handleSubmit = (e) => {
@@ -164,17 +145,18 @@ export default function Customers() {
   }) || []
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Hero / Title Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+    <div className="space-y-6 animate-fade-in w-full">
+      {/* Hero / Title Section - MOBİL DÜZELTMELER */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-6 md:mb-8">
         <div>
           <h3 className="font-semibold text-2xl mb-2 text-primary">Müşteriler</h3>
           <p className="text-on-surface-variant max-w-xl">
             Müşteri listenizi görüntüleyin ve yeni kayıtlar ekleyin.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        {/* Arama ve Buton - Mobilde tam genişlik */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-outline" />
             <input
               type="text"
@@ -184,7 +166,7 @@ export default function Customers() {
                 const value = e.target.value
                 setSearchParams(value ? { q: value } : {})
               }}
-              className="pl-10 pr-4 py-3 rounded-xl border border-outline-variant/20 bg-surface-container text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 w-64"
+              className="pl-10 pr-4 py-3 rounded-xl border border-outline-variant/20 bg-surface-container text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 w-full"
             />
           </div>
           <button
@@ -194,7 +176,7 @@ export default function Customers() {
               setOpen(true)
               setTimeout(() => window.scrollTo(0, 0), 100)
             }}
-            className="flex items-center justify-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:-translate-y-1 transition-all active:scale-95"
+            className="flex items-center justify-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:-translate-y-1 transition-all active:scale-95 w-full md:w-auto"
           >
             <UserPlus className="h-5 w-5" />
             Yeni Müşteri
@@ -236,19 +218,20 @@ export default function Customers() {
                   setProfileOpen(true)
                 }}
               >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-tertiary-container/10 to-surface shadow-sm ring-1 ring-tertiary/10">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-tertiary-container/10 to-surface shadow-sm ring-1 ring-tertiary/10 shrink-0">
                     <span className="text-sm font-semibold text-tertiary">
                       {c.full_name.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-on-surface">{c.full_name}</p>
+                  <div className="min-w-0">
+                    {/* Uzun isimler taşmasın diye truncate eklendi */}
+                    <p className="text-sm font-semibold text-on-surface truncate">{c.full_name}</p>
                     <div className="flex items-center gap-1 text-sm text-on-surface-variant">
-                      <Phone className="h-3.5 w-3.5" />
-                      {c.phone}
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{c.phone}</span>
                     </div>
-                    {c.notes && <p className="mt-0.5 text-xs text-outline">{c.notes}</p>}
+                    {c.notes && <p className="mt-0.5 text-xs text-outline truncate">{c.notes}</p>}
                   </div>
                 </div>
                 <button
@@ -258,7 +241,7 @@ export default function Customers() {
                       deleteMutation.mutate(c.id)
                     }
                   }}
-                  className="rounded-lg p-2 text-outline hover:bg-error-container/20 hover:text-error transition-colors"
+                  className="rounded-lg p-2 text-outline hover:bg-error-container/20 hover:text-error transition-colors shrink-0"
                   title="Sil"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -269,14 +252,14 @@ export default function Customers() {
         </div>
       )}
 
-      {/* Düzenlenmiş Modal Kullanımı (Hem Yeni Hem Düzenleme için tek Modal) */}
+      {/* Yeni Müşteri Modalı */}
       <Modal
-        isOpen={open}
+        isOpen={open && !editingId}
         onClose={() => {
           setOpen(false)
           resetForm()
         }}
-        title={editingId ? 'Müşteriyi Düzenle' : 'Yeni Müşteri'}
+        title="Yeni Müşteri"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -333,113 +316,182 @@ export default function Customers() {
         </form>
       </Modal>
 
-      {/* Müşteri Profili Modalı (Portal ile düzeltildi) */}
-      {profileOpen &&
-        createPortal(
+      {/* Düzenleme Modalı */}
+      {open && editingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2 border-b">
+              <h2 className="text-lg font-semibold text-gray-900">Müşteriyi Düzenle</h2>
+              <button
+                onClick={() => {
+                  setOpen(false)
+                  resetForm()
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-on-surface">Ad Soyad</label>
+                <input
+                  type="text"
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  className="mt-1 block w-full rounded-lg border border-outline-variant px-4 py-3 text-sm bg-surface-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-on-surface">Telefon</label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="mt-1 block w-full rounded-lg border border-outline-variant px-4 py-3 text-sm bg-surface-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-on-surface">Notlar</label>
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  rows={3}
+                  className="mt-1 block w-full rounded-lg border border-outline-variant px-4 py-3 text-sm bg-surface-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    resetForm()
+                  }}
+                  className="rounded-lg border border-outline-variant px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-container disabled:opacity-50 transition-colors"
+                >
+                  {updateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Güncelle
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Müşteri Profili Modalı */}
+      {profileOpen && (
+        <div
+          onClick={() => setProfileOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
           <div
-            onClick={() => setProfileOpen(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={(event) => event.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6"
           >
-            <div
-              onClick={(event) => event.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6"
-            >
-              <div className="max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between border-b border-outline-variant/10 p-5">
-                  <h3 className="text-lg font-semibold text-on-surface">Müşteri Profili</h3>
+            <div className="max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-outline-variant/10 p-5">
+                <h3 className="text-lg font-semibold text-on-surface">Müşteri Profili</h3>
+                <button
+                  onClick={() => setProfileOpen(false)}
+                  className="p-2 rounded-lg hover:bg-surface-container transition-colors"
+                  aria-label="Kapat"
+                >
+                  <X className="h-5 w-5 text-outline" />
+                </button>
+              </div>
+
+              {selectedCustomer && (
+                <div className="space-y-6 p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-primary text-2xl font-bold text-white shadow-lg shadow-primary/20">
+                      {selectedCustomer.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-xl font-semibold text-on-surface truncate">
+                        {selectedCustomer.full_name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                        <Phone className="h-4 w-4" />
+                        {selectedCustomer.phone}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="bg-surface-container-low rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <span className="text-xs text-on-surface-variant">Toplam Harcama</span>
+                      </div>
+                      <p className="text-2xl font-bold text-on-surface">
+                        {new Intl.NumberFormat('tr-TR', {
+                          style: 'currency',
+                          currency: 'TRY',
+                        }).format(customerStats?.totalSpending || 0)}
+                      </p>
+                    </div>
+                    <div className="bg-surface-container-low rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-4 w-4 text-secondary" />
+                        <span className="text-xs text-on-surface-variant">Randevu Sayısı</span>
+                      </div>
+                      <p className="text-2xl font-bold text-on-surface">
+                        {customerStats?.appointmentCount || 0}
+                      </p>
+                    </div>
+                    <div className="bg-surface-container-low rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-4 w-4 text-tertiary" />
+                        <span className="text-xs text-on-surface-variant">Son Ziyaret</span>
+                      </div>
+                      <p className="text-xl font-bold text-on-surface">
+                        {customerStats?.lastVisit
+                          ? new Date(customerStats.lastVisit).toLocaleDateString('tr-TR')
+                          : '-'}
+                      </p>
+                    </div>
+                    <div className="bg-surface-container-low rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-outline" />
+                        <span className="text-xs text-on-surface-variant">Notlar</span>
+                      </div>
+                      <p className="line-clamp-4 text-sm font-medium text-on-surface">
+                        {selectedCustomer.notes || '-'}
+                      </p>
+                    </div>
+                  </div>
+
                   <button
-                    onClick={() => setProfileOpen(false)}
-                    className="p-2 rounded-lg hover:bg-surface-container transition-colors"
-                    aria-label="Kapat"
+                    onClick={() => {
+                      setEditingId(selectedCustomer?.id || null)
+                      setProfileOpen(false)
+                      setOpen(true)
+                      setForm({
+                        full_name: selectedCustomer?.full_name || '',
+                        phone: selectedCustomer?.phone || '',
+                        notes: selectedCustomer?.notes || '',
+                      })
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-primary-container transition-all"
                   >
-                    <X className="h-5 w-5 text-outline" />
+                    <UserPlus className="h-5 w-5" />
+                    Düzenle
                   </button>
                 </div>
-
-                {selectedCustomer && (
-                  <div className="space-y-6 p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-primary text-2xl font-bold text-white shadow-lg shadow-primary/20">
-                        {selectedCustomer.full_name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="text-xl font-semibold text-on-surface">
-                          {selectedCustomer.full_name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                          <Phone className="h-4 w-4" />
-                          {selectedCustomer.phone}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="bg-surface-container-low rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-4 w-4 text-primary" />
-                          <span className="text-xs text-on-surface-variant">Toplam Harcama</span>
-                        </div>
-                        <p className="text-2xl font-bold text-on-surface">
-                          {new Intl.NumberFormat('tr-TR', {
-                            style: 'currency',
-                            currency: 'TRY',
-                          }).format(customerStats?.totalSpending || 0)}
-                        </p>
-                      </div>
-                      <div className="bg-surface-container-low rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="h-4 w-4 text-secondary" />
-                          <span className="text-xs text-on-surface-variant">Randevu Sayısı</span>
-                        </div>
-                        <p className="text-2xl font-bold text-on-surface">
-                          {customerStats?.appointmentCount || 0}
-                        </p>
-                      </div>
-                      <div className="bg-surface-container-low rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="h-4 w-4 text-tertiary" />
-                          <span className="text-xs text-on-surface-variant">Son Ziyaret</span>
-                        </div>
-                        <p className="text-xl font-bold text-on-surface">
-                          {customerStats?.lastVisit
-                            ? new Date(customerStats.lastVisit).toLocaleDateString('tr-TR')
-                            : '-'}
-                        </p>
-                      </div>
-                      <div className="bg-surface-container-low rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-outline" />
-                          <span className="text-xs text-on-surface-variant">Notlar</span>
-                        </div>
-                        <p className="line-clamp-4 text-sm font-medium text-on-surface">
-                          {selectedCustomer.notes || '-'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setEditingId(selectedCustomer?.id || null)
-                        setProfileOpen(false)
-                        setOpen(true)
-                        setForm({
-                          full_name: selectedCustomer?.full_name || '',
-                          phone: selectedCustomer?.phone || '',
-                          notes: selectedCustomer?.notes || '',
-                        })
-                      }}
-                      className="w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-primary-container transition-all"
-                    >
-                      <UserPlus className="h-5 w-5" />
-                      Düzenle
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          </div>,
-          document.body
-        )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

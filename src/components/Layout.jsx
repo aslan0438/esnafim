@@ -66,12 +66,14 @@ export default function Layout() {
 
   const trimmedSearch = searchQuery.trim()
 
-  // DÜZELTME: Undefined kontrolü eklendi
   const toggleTheme = () => {
-    const currentTheme = theme || 'system'
-    if (currentTheme === 'light') setTheme('dark')
-    else if (currentTheme === 'dark') setTheme('system')
-    else setTheme('light')
+    if (theme === 'system') {
+      setTheme('dark')
+    } else if (theme === 'dark') {
+      setTheme('light')
+    } else {
+      setTheme('system')
+    }
   }
 
   const { data: searchResults, isFetching: searchLoading } = useQuery({
@@ -220,11 +222,8 @@ export default function Layout() {
     return ''
   }
 
-  // DÜZELTME: Net isDarkMode hesaplaması
-  const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-
   return (
-    <div className="flex min-h-screen bg-background text-on-surface">
+    <div className="flex min-h-screen bg-background text-on-surface overflow-hidden">
       {/* SideNavBar (Desktop Only) */}
       <aside className="h-screen w-64 fixed left-0 top-0 hidden md:flex flex-col bg-surface border-r border-outline-variant/20 p-6 gap-2 z-50">
         <div className="flex flex-col gap-2 mb-8">
@@ -271,12 +270,12 @@ export default function Layout() {
 
       {/* TopNavBar (Responsive) */}
       <header className="fixed top-0 w-full z-40 bg-surface/95 backdrop-blur-xl border-b border-outline-variant/10 shadow-sm md:pl-64">
-        <div className="flex justify-between items-center px-8 h-16 max-w-screen-2xl mx-auto">
-          <div className="flex items-center gap-2">
-            <span className="md:hidden font-semibold text-lg text-primary">{businessName}</span>
+        <div className="flex justify-between items-center px-4 md:px-8 h-16 max-w-screen-2xl mx-auto gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="md:hidden font-semibold text-lg text-primary truncate">{businessName}</span>
             <h2 className="hidden md:block font-semibold text-lg text-primary">{getPageTitle()}</h2>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 md:gap-6">
             <div className="relative hidden sm:block" ref={searchRef}>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline h-4 w-4" />
               <input
@@ -352,14 +351,13 @@ export default function Layout() {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              {/* DÜZELTME: Tema butonu */}
+            <div className="flex items-center gap-1 md:gap-2">
               <button 
                 onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
                 title={theme === 'system' ? 'Sistem teması' : theme === 'dark' ? 'Koyu mod' : 'Açık mod'}
               >
-                {isDarkMode ? (
+                {theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? (
                   <Moon className="h-5 w-5 text-on-surface-variant" />
                 ) : (
                   <Sun className="h-5 w-5 text-on-surface-variant" />
@@ -382,14 +380,14 @@ export default function Layout() {
               </div>
               <button 
                 onClick={() => navigate('/ayarlar')}
-                className="p-2 rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
+                className="p-2 rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95 hidden sm:block"
               >
                 <Settings className="h-5 w-5 text-on-surface-variant" />
               </button>
               <div className="relative" ref={profileRef}>
                 <button 
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs ml-2 hover:ring-2 hover:ring-primary/20 transition-all"
+                  className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs ml-1 hover:ring-2 hover:ring-primary/20 transition-all"
                 >
                   {user?.email?.charAt(0).toUpperCase() || 'E'}
                 </button>
@@ -469,8 +467,8 @@ export default function Layout() {
       )}
 
       {/* Main Content Canvas */}
-      <main className="pt-20 pb-24 md:pb-12 px-8 md:ml-64 min-h-screen">
-        <div className="max-w-screen-xl mx-auto">
+      <main className="pt-20 pb-24 md:pb-12 px-4 md:px-8 md:ml-64 min-h-screen w-full overflow-x-hidden">
+        <div className="max-w-screen-xl mx-auto w-full">
           <Outlet />
         </div>
       </main>
