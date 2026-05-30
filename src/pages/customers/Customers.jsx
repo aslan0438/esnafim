@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { SkeletonList } from '../../components/ui/Skeleton'
 import { Modal } from '../../components/ui/Modal'
 import { useSearchParams } from 'react-router-dom'
+import { createPortal } from 'react-dom' // Portal için eklendi
 
 export default function Customers() {
   const businessId = useAuthStore((s) => s.businessId)
@@ -210,7 +211,7 @@ export default function Customers() {
           description="İlk müşterinizi ekleyerek müşteri veritabanınızı oluşturmaya başlayın."
           action={{
             label: 'Yeni Müşteri Ekle',
-            onClick: () => setOpen(true)
+            onClick: () => setOpen(true),
           }}
         />
       ) : filteredCustomers.length === 0 ? (
@@ -220,14 +221,16 @@ export default function Customers() {
           description="Arama kriterlerine uygun müşteri yok."
           action={{
             label: 'Aramayı Temizle',
-            onClick: clearSearch
+            onClick: clearSearch,
           }}
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-outline-variant/20 bg-surface/80 shadow-sm backdrop-blur-sm">
           <ul className="divide-y divide-outline-variant/10">
             {filteredCustomers.map((c) => (
-              <li key={c.id} className="group flex items-center justify-between p-4 sm:px-6 transition-all hover:bg-tertiary-container/5 hover:shadow-sm cursor-pointer"
+              <li
+                key={c.id}
+                className="group flex items-center justify-between p-4 sm:px-6 transition-all hover:bg-tertiary-container/5 hover:shadow-sm cursor-pointer"
                 onClick={() => {
                   setSelectedCustomer(c)
                   setProfileOpen(true)
@@ -266,13 +269,14 @@ export default function Customers() {
         </div>
       )}
 
+      {/* Düzenlenmiş Modal Kullanımı (Hem Yeni Hem Düzenleme için tek Modal) */}
       <Modal
-        isOpen={open && !editingId}
+        isOpen={open}
         onClose={() => {
           setOpen(false)
           resetForm()
         }}
-        title="Yeni Müşteri"
+        title={editingId ? 'Müşteriyi Düzenle' : 'Yeni Müşteri'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -320,177 +324,122 @@ export default function Customers() {
               disabled={createMutation.isPending || updateMutation.isPending}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-container disabled:opacity-50 transition-colors"
             >
-              {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 animate-spin" />}
+              {(createMutation.isPending || updateMutation.isPending) && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
               {editingId ? 'Güncelle' : 'Kaydet'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {open && editingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6">
-            <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Müşteriyi Düzenle</h2>
-              <button
-                onClick={() => {
-                  setOpen(false)
-                  resetForm()
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-on-surface">Ad Soyad</label>
-                <input
-                  type="text"
-                  value={form.full_name}
-                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-outline-variant px-4 py-3 text-sm bg-surface-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface">Telefon</label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="mt-1 block w-full rounded-lg border border-outline-variant px-4 py-3 text-sm bg-surface-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface">Notlar</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  rows={3}
-                  className="mt-1 block w-full rounded-lg border border-outline-variant px-4 py-3 text-sm bg-surface-container focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false)
-                    resetForm()
-                  }}
-                  className="rounded-lg border border-outline-variant px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-container disabled:opacity-50 transition-colors"
-                >
-                  {updateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Güncelle
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Customer Profile Modal */}
-      {profileOpen && (
-        <div
-          onClick={() => setProfileOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        >
+      {/* Müşteri Profili Modalı (Portal ile düzeltildi) */}
+      {profileOpen &&
+        createPortal(
           <div
-            onClick={(event) => event.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6"
+            onClick={() => setProfileOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           >
-            <div className="max-h-[80vh] overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-outline-variant/10 p-5">
-                <h3 className="text-lg font-semibold text-on-surface">Müşteri Profili</h3>
-                <button
-                  onClick={() => setProfileOpen(false)}
-                  className="p-2 rounded-lg hover:bg-surface-container transition-colors"
-                  aria-label="Kapat"
-                >
-                  <X className="h-5 w-5 text-outline" />
-                </button>
-              </div>
-
-              {selectedCustomer && (
-                <div className="space-y-6 p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-primary text-2xl font-bold text-white shadow-lg shadow-primary/20">
-                      {selectedCustomer.full_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-xl font-semibold text-on-surface">{selectedCustomer.full_name}</h3>
-                      <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                        <Phone className="h-4 w-4" />
-                        {selectedCustomer.phone}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="bg-surface-container-low rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                        <span className="text-xs text-on-surface-variant">Toplam Harcama</span>
-                      </div>
-                      <p className="text-2xl font-bold text-on-surface">
-                        {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(customerStats?.totalSpending || 0)}
-                      </p>
-                    </div>
-                    <div className="bg-surface-container-low rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="h-4 w-4 text-secondary" />
-                        <span className="text-xs text-on-surface-variant">Randevu Sayısı</span>
-                      </div>
-                      <p className="text-2xl font-bold text-on-surface">{customerStats?.appointmentCount || 0}</p>
-                    </div>
-                    <div className="bg-surface-container-low rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="h-4 w-4 text-tertiary" />
-                        <span className="text-xs text-on-surface-variant">Son Ziyaret</span>
-                      </div>
-                      <p className="text-xl font-bold text-on-surface">
-                        {customerStats?.lastVisit ? new Date(customerStats.lastVisit).toLocaleDateString('tr-TR') : '-'}
-                      </p>
-                    </div>
-                    <div className="bg-surface-container-low rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4 text-outline" />
-                        <span className="text-xs text-on-surface-variant">Notlar</span>
-                      </div>
-                      <p className="line-clamp-4 text-sm font-medium text-on-surface">{selectedCustomer.notes || '-'}</p>
-                    </div>
-                  </div>
-
+            <div
+              onClick={(event) => event.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto p-6"
+            >
+              <div className="max-h-[80vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-outline-variant/10 p-5">
+                  <h3 className="text-lg font-semibold text-on-surface">Müşteri Profili</h3>
                   <button
-                    onClick={() => {
-                      setEditingId(selectedCustomer?.id || null)
-                      setProfileOpen(false)
-                      setOpen(true)
-                      setForm({
-                        full_name: selectedCustomer?.full_name || '',
-                        phone: selectedCustomer?.phone || '',
-                        notes: selectedCustomer?.notes || '',
-                      })
-                    }}
-                    className="w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-primary-container transition-all"
+                    onClick={() => setProfileOpen(false)}
+                    className="p-2 rounded-lg hover:bg-surface-container transition-colors"
+                    aria-label="Kapat"
                   >
-                    <UserPlus className="h-5 w-5" />
-                    Düzenle
+                    <X className="h-5 w-5 text-outline" />
                   </button>
                 </div>
-              )}
+
+                {selectedCustomer && (
+                  <div className="space-y-6 p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-primary text-2xl font-bold text-white shadow-lg shadow-primary/20">
+                        {selectedCustomer.full_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xl font-semibold text-on-surface">
+                          {selectedCustomer.full_name}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                          <Phone className="h-4 w-4" />
+                          {selectedCustomer.phone}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="bg-surface-container-low rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-primary" />
+                          <span className="text-xs text-on-surface-variant">Toplam Harcama</span>
+                        </div>
+                        <p className="text-2xl font-bold text-on-surface">
+                          {new Intl.NumberFormat('tr-TR', {
+                            style: 'currency',
+                            currency: 'TRY',
+                          }).format(customerStats?.totalSpending || 0)}
+                        </p>
+                      </div>
+                      <div className="bg-surface-container-low rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-4 w-4 text-secondary" />
+                          <span className="text-xs text-on-surface-variant">Randevu Sayısı</span>
+                        </div>
+                        <p className="text-2xl font-bold text-on-surface">
+                          {customerStats?.appointmentCount || 0}
+                        </p>
+                      </div>
+                      <div className="bg-surface-container-low rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="h-4 w-4 text-tertiary" />
+                          <span className="text-xs text-on-surface-variant">Son Ziyaret</span>
+                        </div>
+                        <p className="text-xl font-bold text-on-surface">
+                          {customerStats?.lastVisit
+                            ? new Date(customerStats.lastVisit).toLocaleDateString('tr-TR')
+                            : '-'}
+                        </p>
+                      </div>
+                      <div className="bg-surface-container-low rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-outline" />
+                          <span className="text-xs text-on-surface-variant">Notlar</span>
+                        </div>
+                        <p className="line-clamp-4 text-sm font-medium text-on-surface">
+                          {selectedCustomer.notes || '-'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setEditingId(selectedCustomer?.id || null)
+                        setProfileOpen(false)
+                        setOpen(true)
+                        setForm({
+                          full_name: selectedCustomer?.full_name || '',
+                          phone: selectedCustomer?.phone || '',
+                          notes: selectedCustomer?.notes || '',
+                        })
+                      }}
+                      className="w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-primary-container transition-all"
+                    >
+                      <UserPlus className="h-5 w-5" />
+                      Düzenle
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

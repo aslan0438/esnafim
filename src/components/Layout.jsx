@@ -58,20 +58,20 @@ export default function Layout() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
+
   const notifRef = useRef(null)
   const profileRef = useRef(null)
   const shortcutsRef = useRef(null)
   const searchRef = useRef(null)
+
   const trimmedSearch = searchQuery.trim()
 
+  // DÜZELTME: Undefined kontrolü eklendi
   const toggleTheme = () => {
-    if (theme === 'system') {
-      setTheme('dark')
-    } else if (theme === 'dark') {
-      setTheme('light')
-    } else {
-      setTheme('system')
-    }
+    const currentTheme = theme || 'system'
+    if (currentTheme === 'light') setTheme('dark')
+    else if (currentTheme === 'dark') setTheme('system')
+    else setTheme('light')
   }
 
   const { data: searchResults, isFetching: searchLoading } = useQuery({
@@ -149,7 +149,6 @@ export default function Layout() {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
         return
       }
-
       if (e.key.toLowerCase() === 'n') {
         e.preventDefault()
         navigate('/randevular?new=1')
@@ -221,6 +220,9 @@ export default function Layout() {
     return ''
   }
 
+  // DÜZELTME: Net isDarkMode hesaplaması
+  const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+
   return (
     <div className="flex min-h-screen bg-background text-on-surface">
       {/* SideNavBar (Desktop Only) */}
@@ -236,7 +238,6 @@ export default function Layout() {
             </div>
           </div>
         </div>
-
         <nav className="flex-1 flex flex-col gap-1">
           {navItems.map((item) => (
             <NavItem key={item.to} item={item} />
@@ -352,17 +353,19 @@ export default function Layout() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {/* DÜZELTME: Tema butonu */}
               <button 
                 onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95"
                 title={theme === 'system' ? 'Sistem teması' : theme === 'dark' ? 'Koyu mod' : 'Açık mod'}
               >
-                {theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? (
+                {isDarkMode ? (
                   <Moon className="h-5 w-5 text-on-surface-variant" />
                 ) : (
                   <Sun className="h-5 w-5 text-on-surface-variant" />
                 )}
               </button>
+              
               <div className="relative" ref={notifRef}>
                 <button 
                   onClick={() => setShowNotifications(!showNotifications)}
@@ -466,7 +469,7 @@ export default function Layout() {
       )}
 
       {/* Main Content Canvas */}
-      <main className="pt-24 pb-24 md:pb-12 px-8 md:ml-64 min-h-screen">
+      <main className="pt-20 pb-24 md:pb-12 px-8 md:ml-64 min-h-screen">
         <div className="max-w-screen-xl mx-auto">
           <Outlet />
         </div>

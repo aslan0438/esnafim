@@ -265,3 +265,31 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
+/* Modal açıkken layout kaymasını engelle */
+body.modal-open {
+  position: fixed;
+  width: 100%;
+  overflow-y: scroll;
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply overflow-x-hidden w-full;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* iOS'ta inputlara tıklayınca otomatik zoom yapmasını engeller */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Dokunmatik cihazlarda odak halkasını düzeltir */
+  *:focus-visible {
+    outline: 2px solid theme('colors.primary');
+    outline-offset: 2px;
+  }
+}

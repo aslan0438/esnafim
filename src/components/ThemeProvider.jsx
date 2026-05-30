@@ -1,12 +1,13 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { useThemeStore } from '../stores/themeStore'
 
 export default function ThemeProvider({ children }) {
   const theme = useThemeStore((s) => s.theme)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    const currentTheme = theme || 'system'
+    const isDark = currentTheme === 'dark' || (currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
     
     if (isDark) {
       root.classList.add('dark')
@@ -15,10 +16,11 @@ export default function ThemeProvider({ children }) {
     }
   }, [theme])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = () => {
-      if (theme === 'system') {
+      const currentTheme = theme || 'system'
+      if (currentTheme === 'system') {
         const root = document.documentElement
         if (mediaQuery.matches) {
           root.classList.add('dark')
