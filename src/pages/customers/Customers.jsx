@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../api/supabaseClient'
 import { useAuthStore } from '../../stores/authStore'
-import { UserPlus, Loader2, Trash2, Phone, TrendingUp, Calendar, FileText, Search, X } from 'lucide-react'
+import { UserPlus, Loader2, Trash2, Phone, TrendingUp, Calendar, FileText, Search, X, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { SkeletonList } from '../../components/ui/Skeleton'
@@ -146,7 +146,7 @@ export default function Customers() {
 
   return (
     <div className="space-y-6 animate-fade-in w-full">
-      {/* Hero / Title Section - MOBİL DÜZELTMELER */}
+      {/* Hero / Title Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-6 md:mb-8">
         <div>
           <h3 className="font-semibold text-2xl mb-2 text-primary">Müşteriler</h3>
@@ -154,7 +154,6 @@ export default function Customers() {
             Müşteri listenizi görüntüleyin ve yeni kayıtlar ekleyin.
           </p>
         </div>
-        {/* Arama ve Buton - Mobilde tam genişlik */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-outline" />
@@ -225,13 +224,15 @@ export default function Customers() {
                     </span>
                   </div>
                   <div className="min-w-0">
-                    {/* Uzun isimler taşmasın diye truncate eklendi */}
                     <p className="text-sm font-semibold text-on-surface truncate">{c.full_name}</p>
                     <div className="flex items-center gap-1 text-sm text-on-surface-variant">
                       <Phone className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{c.phone}</span>
                     </div>
                     {c.notes && <p className="mt-0.5 text-xs text-outline truncate">{c.notes}</p>}
+                    {c.loyalty_points > 0 && (
+                      <p className="text-xs text-yellow-600 mt-0.5">⭐ {c.loyalty_points} puan</p>
+                    )}
                   </div>
                 </div>
                 <button
@@ -468,17 +469,46 @@ export default function Customers() {
                         {selectedCustomer.notes || '-'}
                       </p>
                     </div>
+                    {/* ⭐ SADAKAT PUANI KARTI */}
+                    <div className="bg-surface-container-low rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="h-4 w-4 text-yellow-500" />
+                        <span className="text-xs text-on-surface-variant">Sadakat Puanı</span>
+                      </div>
+                      <p className="text-2xl font-bold text-on-surface">{selectedCustomer.loyalty_points ?? 0}</p>
+                      {(selectedCustomer.loyalty_points ?? 0) >= 100 && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { data, error } = await supabase.rpc('generate_discount_code', {
+                                customer_id: selectedCustomer.id,
+                                points: 100
+                              })
+                              if (error) throw error
+                              toast.success(`İndirim kodunuz: ${data} (100 puan kullanıldı)`)
+                              queryClient.invalidateQueries({ queryKey: ['customers', businessId] })
+                              setProfileOpen(false)
+                            } catch (err) {
+                              toast.error(err.message || 'Kod oluşturulamadı')
+                            }
+                          }}
+                          className="mt-2 w-full text-xs bg-primary text-white py-1.5 rounded-lg hover:bg-primary-container transition-colors"
+                        >
+                          100 Puanı Kullan (İndirim Kodu Al)
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <button
                     onClick={() => {
-                      setEditingId(selectedCustomer?.id || null)
+                      setEditingId(selectedCustomer.id)
                       setProfileOpen(false)
                       setOpen(true)
                       setForm({
-                        full_name: selectedCustomer?.full_name || '',
-                        phone: selectedCustomer?.phone || '',
-                        notes: selectedCustomer?.notes || '',
+                        full_name: selectedCustomer.full_name || '',
+                        phone: selectedCustomer.phone || '',
+                        notes: selectedCustomer.notes || '',
                       })
                     }}
                     className="w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-primary-container transition-all"
